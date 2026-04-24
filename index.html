@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MOAZ SYSTEM v2</title>
+
+<style>
+body {
+  margin: 0;
+  background: black;
+  color: #00ff00;
+  font-family: monospace;
+  overflow: hidden;
+}
+
+/* MATRIX */
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
+/* CONTAINER */
+#container {
+  padding: 15px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.line {
+  margin: 3px 0;
+}
+
+#divider {
+  height: 2px;
+  background: #00ff00;
+  box-shadow: 0 0 10px #00ff00;
+  margin: 15px 0;
+}
+
+#terminal {
+  height: 60vh;
+  overflow-y: auto;
+}
+
+.prompt {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+input {
+  background: rgba(0,255,0,0.05);
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  font-family: monospace;
+  font-size: 16px;
+  width: 100%;
+  padding: 8px;
+  outline: none;
+  box-shadow: 0 0 5px #00ff00;
+  caret-color: #00ff00;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div id="container">
+
+<div id="header">
+  <div class="line">>> MOAZ SYSTEM v2 LOADED...</div>
+  <div class="line">>> TYPE 'help' TO START</div>
+  <div class="line">>> SYSTEM READY ✔</div>
+</div>
+
+<div id="divider"></div>
+
+<div id="terminal"></div>
+
+<div class="prompt">
+  <span>></span>
+  <input id="input" autofocus>
+</div>
+
+</div>
+
+<script>
+// MATRIX
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+
+let letters = "01".split("");
+let fontSize = 14;
+let columns = canvas.width / fontSize;
+let drops = Array(Math.floor(columns)).fill(1);
+
+function draw() {
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "rgba(0,255,0,0.15)";
+  ctx.font = fontSize + "px monospace";
+
+  for(let i=0;i<drops.length;i++){
+    let text = letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+    if(drops[i]*fontSize > canvas.height && Math.random()>0.975){
+      drops[i]=0;
+    }
+    drops[i]++;
+  }
+}
+setInterval(draw,40);
+
+// RESIZE FIX
+window.addEventListener("resize",()=>{
+  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+  columns = canvas.width / fontSize;
+  drops = Array(Math.floor(columns)).fill(1);
+});
+
+// TERMINAL
+const input = document.getElementById("input");
+const terminal = document.getElementById("terminal");
+
+// TYPE EFFECT
+async function typeText(text){
+  return new Promise(resolve=>{
+    let i=0;
+    let line=document.createElement("div");
+    terminal.appendChild(line);
+
+    let interval=setInterval(()=>{
+      line.innerHTML += text[i];
+      i++;
+      if(i>=text.length){
+        clearInterval(interval);
+        resolve();
+      }
+    },15);
+
+    terminal.scrollTop = terminal.scrollHeight;
+  });
+}
+
+// COMMANDS
+input.addEventListener("keydown",async function(e){
+  if(e.key==="Enter"){
+    let cmd=input.value.trim().toLowerCase();
+
+    let user=document.createElement("div");
+    user.innerHTML="> "+cmd;
+    terminal.appendChild(user);
+
+    await handle(cmd);
+
+    input.value="";
+    terminal.scrollTop=terminal.scrollHeight;
+  }
+});
+
+async function handle(cmd){
+
+if(cmd==="help"){
+  await typeText(">> AVAILABLE COMMANDS:");
+  await typeText("--------------------------------");
+  await typeText("help   - show commands");
+  await typeText("contact- owner info");
+  await typeText("clear  - clear screen");
+  await typeText("about  - system info");
+  await typeText("time   - show time");
+  await typeText("status - system status");
+  await typeText("echo   - repeat text");
+}
+
+else if(cmd==="contact"){
+  await typeText(">> OWNER: MOAZ SAMY");
+
+  let box=document.createElement("div");
+  box.innerHTML=`
+  >> IG:
+  <a href="https://instagram.com/moaz_samy_0"
+  target="_blank"
+  style="color:#ff00ff;border:1px solid #ff00ff;padding:3px;text-decoration:none;">
+  @moaz_samy_0
+  </a>`;
+  terminal.appendChild(box);
+}
+
+else if(cmd==="clear"){
+  terminal.innerHTML="";
+}
+
+else if(cmd==="about"){
+  await typeText(">> MOAZ SYSTEM v2");
+  await typeText(">> CYBER TERMINAL INTERFACE");
+  await typeText(">> STATUS: ACTIVE ✔");
+}
+
+else if(cmd==="time"){
+  let now=new Date().toLocaleTimeString();
+  await typeText(">> TIME: "+now);
+}
+
+else if(cmd==="status"){
+  await typeText(">> SYSTEM OK");
+  await typeText(">> NO ERRORS DETECTED");
+  await typeText(">> CPU LOAD: 12%");
+}
+
+else if(cmd.startsWith("echo")){
+  let text=cmd.replace("echo","");
+  await typeText(text || ">> NOTHING TO ECHO");
+}
+
+else {
+  await typeText(">> UNKNOWN COMMAND");
+  await typeText(">> TYPE 'help'");
+}
+
+}
+
+</script>
+
+</body>
+</html>
