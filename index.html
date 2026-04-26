@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MOAZ SYSTEM v2 </title>
+<style>
+  body { margin: 0; background: black; color: #00ff00; font-family: monospace; overflow: hidden; }
+  canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+  #container { padding: 15px; max-width: 900px; margin: auto; }
+  .line { margin: 6px 0; display: flex; align-items: center; }
+  #divider { height: 2px; background: #00ff00; box-shadow: 0 0 10px #00ff00; margin: 15px 0; }
+  #terminal { height: 75vh; overflow-y: auto; padding-right: 10px; scroll-behavior: smooth; }
+  
+  #terminal div { margin: 12px 0; line-height: 1.6; word-wrap: break-word; }
+  .user { color: #ffffff; font-weight: bold; }
+  .system { color: #00aaff; }
+  .ai-response { 
+    color: #00ff00; 
+    border-left: 3px solid #b57cff; 
+    padding-left: 12px; 
+    white-space: pre-wrap; 
+    font-size: 15px;
+  }
+
+  /* 🔥 Improved Prompt Style - No Box */
+  .prompt {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    align-items: center;
+  }
+
+  .prompt span {
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 20px;
+    text-shadow: 0 0 8px #00ff00;
+  }
+
+  input {
+    background: transparent; /* خلفية شفافة */
+    border: none; /* حذف الحدود */
+    color: #00ff00;
+    font-family: monospace;
+    font-size: 18px;
+    width: 100%;
+    outline: none; /* حذف إطار الاختيار */
+    caret-color: #00ff00; /* لون المؤشر */
+    text-shadow: 0 0 5px #00ff00;
+  }
+
+  .developer-link {
+    color: #b57cff; text-decoration: none; font-weight: bold; border: 1px solid #b57cff;
+    padding: 2px 10px; margin-left: 10px; font-size: 13px; background: rgba(181, 124, 255, 0.1);
+    box-shadow: 0 0 5px #b57cff; animation: glow-purple 1.5s infinite alternate; border-radius: 4px;
+  }
+
+  @keyframes glow-purple { from { box-shadow: 0 0 5px #b57cff; } to { box-shadow: 0 0 15px #b57cff; } }
+  #terminal::-webkit-scrollbar { width: 5px; }
+  #terminal::-webkit-scrollbar-thumb { background: #00ff00; }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div id="container">
+  <div id="header">
+    <div class="line">>> MOAZ AI SYSTEM v2.1 </div>
+    <div class="line">
+      >> STATUS: ONLINE ✔ 
+      <span style="margin-left: 20px; color: #888;">DEVELOPER: </span>
+      <a href="https://instagram.com/moaz_samy_0" target="_blank" class="developer-link">@moaz_samy_0</a>
+    </div>
+  </div>
+
+  <div id="divider"></div>
+  <div id="terminal"></div>
+
+  <div class="prompt">
+    <span>>></span>
+    <input id="input" autofocus placeholder="...">
+  </div>
+</div>
+
+<script>
+// --- MATRIX ANIMATION ---
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+canvas.height = window.innerHeight; canvas.width = window.innerWidth;
+let letters = "01".split("");
+let fontSize = 14;
+let columns = canvas.width / fontSize;
+let drops = Array(Math.floor(columns)).fill(1);
+
+function draw() {
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "rgba(0,255,0,0.15)";
+  ctx.font = fontSize + "px monospace";
+  for(let i=0;i<drops.length;i++){
+    let text = letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+    if(drops[i]*fontSize > canvas.height && Math.random()>0.975) drops[i]=0;
+    drops[i]++;
+  }
+}
+setInterval(draw, 40);
+
+// --- TERMINAL LOGIC ---
+const input = document.getElementById("input");
+const terminal = document.getElementById("terminal");
+
+async function typeText(text, className = "system") {
+  return new Promise(resolve => {
+    let i = 0;
+    let line = document.createElement("div");
+    line.classList.add(className);
+    terminal.appendChild(line);
+    let interval = setInterval(() => {
+      line.textContent += text[i];
+      i++;
+      terminal.scrollTop = terminal.scrollHeight;
+      if (i >= text.length) { clearInterval(interval); resolve(); }
+    }, 10); 
+  });
+}
+
+async function callAI(userMsg) {
+  const API_KEY = "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"; // تأكد من وضع مفتاحك هنا
+  const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ 
+            role: "system", 
+            content: "Terminal AI. Concise. No complex markdown." 
+        }, { 
+            role: "user", 
+            content: userMsg 
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) return "ERROR: " + (data.error?.message || "CORE_FAULT");
+    return data.choices[0].message.content;
+  } catch (error) {
+    return "CONNECTION ERROR.";
+  }
+}
+
+input.addEventListener("keydown", async function(e) {
+  if (e.key === "Enter" && input.value.trim() !== "") {
+    let msg = input.value;
+    input.value = "";
+    
+    let userDiv = document.createElement("div");
+    userDiv.className = "user";
+    userDiv.textContent = "> " + msg;
+    terminal.appendChild(userDiv);
+
+    if(msg.toLowerCase() === "clear") { terminal.innerHTML = ""; return; }
+
+    let loading = document.createElement("div");
+    loading.className = "system";
+    loading.textContent = ">> ANALYZING...";
+    terminal.appendChild(loading);
+    terminal.scrollTop = terminal.scrollHeight;
+
+    const aiResponse = await callAI(msg);
+    if (loading.parentNode) terminal.removeChild(loading);
+    await typeText(aiResponse, "ai-response");
+  }
+});
+</script>
+</body>
+</html>ٍ
